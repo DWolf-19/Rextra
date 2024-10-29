@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2023 DWolf Nineteen & The JDA-Extra Contributors
- * Copyright (c) 2024 DWolf Nineteen & The Rextra Contributors
+ * Copyright (c) 2023 DWolf Nineteen & The JDA-Extra contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,13 +19,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+package com.dwolfnineteen.jdaextra.commands.subcommandgroups;
 
 /**
- * Command builders.
- * <br>
- * Classes that implement logic of assembling "view" objects (models)
- * by collecting data from command annotations and the Java Reflection API.
  *
- * @see com.dwolfnineteen.jdaextra.models.commands.CommandModel CommandModel
  */
-package com.dwolfnineteen.jdaextra.builders;
+public abstract class SlashLikeSubcommandGroup extends BaseSubcommandGroup {
+}

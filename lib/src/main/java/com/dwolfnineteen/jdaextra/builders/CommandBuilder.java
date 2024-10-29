@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2023 DWolf Nineteen & The JDA-Extra contributors
+ * Copyright (c) 2023 DWolf Nineteen & The JDA-Extra Contributors
+ * Copyright (c) 2024 DWolf Nineteen & The Rextra Contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,16 +23,24 @@
 package com.dwolfnineteen.jdaextra.builders;
 
 import com.dwolfnineteen.jdaextra.annotations.ExtraMainCommand;
+import com.dwolfnineteen.jdaextra.annotations.commands.DescriptionLocalizations;
 import com.dwolfnineteen.jdaextra.annotations.commands.GuildOnly;
+import com.dwolfnineteen.jdaextra.annotations.commands.Localization;
+import com.dwolfnineteen.jdaextra.annotations.commands.NameLocalizations;
 import com.dwolfnineteen.jdaextra.annotations.options.ChoiceDouble;
 import com.dwolfnineteen.jdaextra.annotations.options.ChoiceLong;
 import com.dwolfnineteen.jdaextra.annotations.options.ChoiceString;
 import com.dwolfnineteen.jdaextra.commands.BaseCommand;
-import com.dwolfnineteen.jdaextra.models.CommandModel;
+import com.dwolfnineteen.jdaextra.models.CommonCommandProperties;
+import com.dwolfnineteen.jdaextra.models.commands.CommandModel;
+import com.dwolfnineteen.jdaextra.models.subcommands.SubcommandProperties;
+import com.dwolfnineteen.jdaextra.models.subcommands.groups.SubcommandGroupProperties;
+import com.dwolfnineteen.jdaextra.options.data.CommandOptionData;
 import net.dv8tion.jda.api.entities.IMentionable;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.Channel;
+import net.dv8tion.jda.api.interactions.DiscordLocale;
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import org.jetbrains.annotations.NotNull;
@@ -40,7 +49,11 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Base command builder.
@@ -52,40 +65,52 @@ public abstract class CommandBuilder {
     protected BaseCommand command;
 
     /**
+     * Construct new {@link CommandBuilder}.
+     *
+     * @param command The command class.
+     */
+    protected CommandBuilder(@NotNull BaseCommand command) {
+        this.command = command;
+    }
+
+    /**
      * Build the command model.
      *
      * @return The command model.
      */
-    public abstract CommandModel buildModel();
+    public abstract CommonCommandProperties buildModel();
 
     /**
-     * Build the command <strong>main</strong> entry point.
+     * Build the command entry point.
      *
      * @return The entry point.
      */
-    @Nullable
-    protected Method buildMain() {
-        for (Method method : command.getClass().getDeclaredMethods()) {
-            if (method.isAnnotationPresent(ExtraMainCommand.class)) {
-                return method;
-            }
-        }
-
-        return null;
+    protected @Nullable Method buildEntryPoint() {
+        return Arrays.stream(command.getClass().getDeclaredMethods())
+                .filter(method -> method.isAnnotationPresent(ExtraMainCommand.class))
+                .findFirst()
+                .orElse(null);
     }
+
+    /**
+     * Build the command options.
+     *
+     * @param entryPoint The command entry point.
+     * @return {@link List} of {@link CommandOptionData}.
+     */
+    protected abstract List<? extends CommandOptionData> buildOptions(Method entryPoint);
 
     /**
      * Build option type.
      *
      * @param parameterType Parameter type from Java Reflection API.
-     * @param typeFromAnnotation {@link OptionType} defined by annotation
-     * (default: {@link OptionType#UNKNOWN UNKNOWN}).
+     * @param typeFromAnnotation {@link OptionType} defined by annotation (default: {@link OptionType#UNKNOWN UNKNOWN}).
      * If {@link OptionType#UNKNOWN UNKNOWN}, parameter type will be used.
      * @return The {@link OptionType}.
      * @see com.dwolfnineteen.jdaextra.annotations.options.HybridOption HybridOption
      */
-    @NotNull
-    protected OptionType buildOptionType(@NotNull Class<?> parameterType, @NotNull OptionType typeFromAnnotation) {
+    protected @NotNull OptionType buildOptionType(@NotNull Class<?> parameterType,
+                                                  @NotNull OptionType typeFromAnnotation) {
         OptionType type;
 
         if (typeFromAnnotation == OptionType.UNKNOWN) {
@@ -117,10 +142,9 @@ public abstract class CommandBuilder {
      * Build command choices from option annotations.
      *
      * @param annotations Option annotations.
-     * @return {@link List} of {@link net.dv8tion.jda.api.interactions.commands.Command.Choice Command.Choice}.
+     * @return {@link List} of {@link Command.Choice}.
      */
-    @NotNull
-    protected List<Command.Choice> buildChoices(@NotNull Annotation[] annotations) {
+    protected @NotNull List<Command.Choice> buildOptionChoices(@NotNull Annotation[] annotations) {
         List<Command.Choice> choices = new ArrayList<>();
 
         for (Annotation annotation : annotations) {
@@ -140,16 +164,107 @@ public abstract class CommandBuilder {
     }
 
     /**
+     * Build subcommands.
+     *
+     * @return {@link List} of {@link SubcommandProperties}.
+     */
+    protected abstract List<? extends SubcommandProperties> buildSubcommands();
+
+    /**
+     * Build subcommand groups with subcommands.
+     *
+     * @return {@link List} of {@link SubcommandGroupProperties}.
+     */
+    protected abstract List<? extends SubcommandGroupProperties> buildSubcommandGroups();
+
+    // TODO: More settings
+    /**
      * Build command settings (such as {@link GuildOnly @GuildOnly}).
      *
      * @param model The command model.
-     * @param cls The command class.
+     * @param clazz The command class.
      * @return Configured {@link CommandModel}.
      */
-    @NotNull
-    protected CommandModel buildSettings(@NotNull CommandModel model, @NotNull Class<? extends BaseCommand> cls) {
-        model.setGuildOnly(cls.isAnnotationPresent(GuildOnly.class));
+    protected @NotNull CommandModel buildSettings(@NotNull CommandModel model,
+                                                  @NotNull Class<? extends BaseCommand> clazz) {
+        return model.setGuildOnly(clazz.isAnnotationPresent(GuildOnly.class));
+    }
 
-        return model;
+    /**
+     * Build name localizations (extract data from entry point annotations).
+     *
+     * @param entryPoint The command entry point.
+     * @return {@link Map} of {@link DiscordLocale} and translated string.
+     */
+    protected @NotNull Map<DiscordLocale, String> buildNameLocalizations(@NotNull Method entryPoint) {
+        Map<DiscordLocale, String> localizations = new HashMap<>();
+        NameLocalizations localizationsAnnotation = entryPoint.getAnnotation(NameLocalizations.class);
+
+        if (localizationsAnnotation != null) {
+            localizations.putAll(convertLocalizationsToMap(localizationsAnnotation.value()));
+        }
+
+        return localizations;
+    }
+
+    /**
+     * Build name localizations (extract data from class annotations).
+     *
+     * @param clazz The command/subcommand group class.
+     * @return {@link Map} of {@link DiscordLocale} and translated string.
+     */
+    protected @NotNull Map<DiscordLocale, String> buildNameLocalizations(@NotNull Class<?> clazz) {
+        Map<DiscordLocale, String> localizations = new HashMap<>();
+        NameLocalizations localizationsAnnotation = clazz.getAnnotation(NameLocalizations.class);
+
+        if (localizationsAnnotation != null) {
+            localizations.putAll(convertLocalizationsToMap(localizationsAnnotation.value()));
+        }
+
+        return localizations;
+    }
+
+    /**
+     * Build description localizations (extract data from entry point annotations).
+     *
+     * @param entryPoint The command entry point.
+     * @return {@link Map} of {@link DiscordLocale} and translated string.
+     */
+    protected @NotNull Map<DiscordLocale, String> buildDescriptionLocalizations(@NotNull Method entryPoint) {
+        Map<DiscordLocale, String> localizations = new HashMap<>();
+        DescriptionLocalizations localizationsAnnotation = entryPoint.getAnnotation(DescriptionLocalizations.class);
+
+        if (localizationsAnnotation != null) {
+            localizations.putAll(convertLocalizationsToMap(localizationsAnnotation.value()));
+        }
+
+        return localizations;
+    }
+
+    /**
+     * Build description localizations (extract data from class annotations).
+     *
+     * @param clazz The command/subcommand group class.
+     * @return {@link Map} of {@link DiscordLocale} and translated string.
+     */
+    protected @NotNull Map<DiscordLocale, String> buildDescriptionLocalizations(@NotNull Class<?> clazz) {
+        Map<DiscordLocale, String> localizations = new HashMap<>();
+        DescriptionLocalizations localizationsAnnotation = clazz.getAnnotation(DescriptionLocalizations.class);
+
+        if (localizationsAnnotation != null) {
+            localizations.putAll(convertLocalizationsToMap(localizationsAnnotation.value()));
+        }
+
+        return localizations;
+    }
+
+    /**
+     * Convert array of {@link Localization}s to {@link Map} of {@link DiscordLocale} and translated string.
+     *
+     * @param localizations Array of {@link Localization}s.
+     * @return {@link Map} of {@link DiscordLocale} and translated string.
+     */
+    protected @NotNull Map<DiscordLocale, String> convertLocalizationsToMap(@NotNull Localization[] localizations) {
+        return Arrays.stream(localizations).collect(Collectors.toMap(Localization::locale, Localization::string));
     }
 }

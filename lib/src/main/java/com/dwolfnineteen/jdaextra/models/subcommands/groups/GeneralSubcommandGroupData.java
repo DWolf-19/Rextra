@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2023 DWolf Nineteen & The JDA-Extra contributors
+ * Copyright (c) 2023 DWolf Nineteen & The JDA-Extra Contributors
+ * Copyright (c) 2024 DWolf Nineteen & The Rextra Contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,17 +20,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.dwolfnineteen.jdaextra.annotations.commands;
+package com.dwolfnineteen.jdaextra.models.subcommands.groups;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
 
 /**
- * Annotation-marker: command can only be executed in NSFW channels.
+ * Classes that implements this interface can be converted into the standard {@link SubcommandGroupData}
+ * through {@link #toGeneralSubcommandGroupData()}.
+ * <br>
+ * This is used when binding to the JDA.
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface NSFW {
+public interface GeneralSubcommandGroupData {
+    /**
+     * Get standard {@link SubcommandGroupData} for this object.
+     *
+     * @return The {@link SubcommandGroupData} instance.
+     * @see SubcommandGroupData
+     */
+    SubcommandGroupData toGeneralSubcommandGroupData();
 }

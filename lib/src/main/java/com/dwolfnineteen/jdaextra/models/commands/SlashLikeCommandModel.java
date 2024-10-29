@@ -20,13 +20,23 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+package com.dwolfnineteen.jdaextra.models.commands;
+
+import net.dv8tion.jda.api.interactions.commands.localization.LocalizationFunction;
 
 /**
- * Command builders.
- * <br>
- * Classes that implement logic of assembling "view" objects (models)
- * by collecting data from command annotations and the Java Reflection API.
- *
- * @see com.dwolfnineteen.jdaextra.models.commands.CommandModel CommandModel
+ * Interface defining additional APIs for normal slash-like (slash-runnable) commands.
  */
-package com.dwolfnineteen.jdaextra.builders;
+public interface SlashLikeCommandModel extends CommandModel {
+    /**
+     * Sets the {@link LocalizationFunction} for this command.
+     * This allows to localize the entire command.
+     * <br>
+     * Only accepts
+     * {@link net.dv8tion.jda.api.interactions.commands.localization.ResourceBundleLocalizationFunction ResourceBundleLocalizationFunction}.
+     *
+     * @param localizationFunction The {@link LocalizationFunction}.
+     * @return The {@link SlashLikeCommandModel} instance, for chaining.
+     */
+    SlashLikeCommandModel setLocalizationFunction(LocalizationFunction localizationFunction);
+}

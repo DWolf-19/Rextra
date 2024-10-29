@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2023 DWolf Nineteen & The JDA-Extra contributors
+ * Copyright (c) 2023 DWolf Nineteen & The JDA-Extra Contributors
+ * Copyright (c) 2024 DWolf Nineteen & The Rextra Contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,9 +26,9 @@ import com.dwolfnineteen.jdaextra.JDAExtra;
 import com.dwolfnineteen.jdaextra.events.HybridCommandEvent;
 import com.dwolfnineteen.jdaextra.events.PrefixCommandEvent;
 import com.dwolfnineteen.jdaextra.events.SlashCommandEvent;
-import com.dwolfnineteen.jdaextra.models.CommandModel;
-import com.dwolfnineteen.jdaextra.models.HybridCommandModel;
-import com.dwolfnineteen.jdaextra.options.data.HybridOptionData;
+import com.dwolfnineteen.jdaextra.models.CommonCommandProperties;
+import com.dwolfnineteen.jdaextra.models.CommonHybridCommandProperties;
+import com.dwolfnineteen.jdaextra.options.data.CommandOptionData;
 import com.dwolfnineteen.jdaextra.options.mappings.HybridOptionMapping;
 import com.dwolfnineteen.jdaextra.options.mappings.PrefixOptionMapping;
 import com.dwolfnineteen.jdaextra.options.mappings.SlashOptionMapping;
@@ -39,6 +40,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -49,70 +51,88 @@ import java.util.stream.Collectors;
 public class HybridCommandParser extends CommandParser {
     private final CommandParser parser;
 
-    private HybridCommandModel model;
-
     /**
-     * Construct new {@link com.dwolfnineteen.jdaextra.parsers.HybridCommandParser HybridCommandParser}.
+     * Construct new {@link HybridCommandParser}.
      *
-     * @param jdaExtra The {@link com.dwolfnineteen.jdaextra.JDAExtra JDAExtra} instance.
-     * @param parser The {@link com.dwolfnineteen.jdaextra.parsers.CommandParser CommandParser} to be used.
+     * @param jdaExtra The {@link JDAExtra} instance.
+     * @param parser The {@link CommandParser} to be used.
      */
     public HybridCommandParser(@NotNull JDAExtra jdaExtra,
+                               @NotNull GenericEvent sourceEvent,
                                @NotNull CommandParser parser) {
-        this.jdaExtra = jdaExtra;
+        super(jdaExtra, sourceEvent);
+
         this.parser = parser;
     }
 
-    @Override
-    @NotNull
-    public GenericEvent getSourceEvent() {
-        return parser.getSourceEvent();
+    /**
+     * @return
+     */
+    public @NotNull CommandParser getSourceParser() {
+        return parser;
     }
 
     /**
-     * The {@link com.dwolfnineteen.jdaextra.models.HybridCommandModel HybridCommandModel} for this parser.
+     * {@inheritDoc}
      *
-     * @return The {@link com.dwolfnineteen.jdaextra.models.HybridCommandModel HybridCommandModel} for this parser.
+     * @return {@inheritDoc}
      */
     @Override
-    @Nullable
-    public HybridCommandModel getModel() {
-        return model;
+    public @NotNull GenericEvent getSourceEvent() {
+        return sourceEvent;
     }
 
     /**
-     * Sets {@link com.dwolfnineteen.jdaextra.models.CommandModel CommandModel} for this parser.
+     * The {@link CommonHybridCommandProperties} for this parser.
      *
-     * @param model {@link com.dwolfnineteen.jdaextra.models.CommandModel CommandModel}.
-     * @return Current {@link com.dwolfnineteen.jdaextra.parsers.HybridCommandParser HybridCommandParser} instance,
-     * for chaining.
+     * @return The {@link CommonHybridCommandProperties} for this parser.
      */
     @Override
-    @NotNull
-    public HybridCommandParser setModel(CommandModel model) {
-        this.model = (HybridCommandModel) model;
+    public @Nullable CommonHybridCommandProperties getProperties() {
+        return (CommonHybridCommandProperties) properties;
+    }
+
+    /**
+     * Sets {@link CommonCommandProperties} for this parser.
+     *
+     * @param properties The {@link CommonCommandProperties}.
+     * @return The {@link HybridCommandParser} instance, for chaining.
+     */
+    @Override
+    public @NotNull HybridCommandParser setProperties(@NotNull CommonCommandProperties properties) {
+        this.properties = properties;
 
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return {@inheritDoc}
+     */
     @Override
-    @NotNull
-    public Object[] buildInvokeArguments() {
+    public @NotNull Object[] buildInvokeArguments() {
+        Objects.requireNonNull(properties);
+        Objects.requireNonNull(parser);
+
         List<Object> arguments = new ArrayList<>();
-        List<HybridOptionData> options = model.getOptions();
+        List<? extends CommandOptionData> options = properties.getOptions();
 
         if (parser instanceof PrefixCommandParser) {
             PrefixCommandParser prefixParser = (PrefixCommandParser) parser;
 
             List<PrefixOptionMapping> mappings = new ArrayList<>();
 
-            String trigger = prefixParser.parseTrigger();
+            String trigger = prefixParser.getTrigger();
+            List<String> optionValues = prefixParser.getOptions();
 
-            for (int i = 0; i < prefixParser.parseOptions(trigger).length; i++) {
-                mappings.add(new PrefixOptionMapping(options.get(i).getType(),
-                        options.get(i).getName(),
-                        prefixParser.parseOptions(trigger)[i],
-                        prefixParser.getSourceEvent()));
+            if (!optionValues.isEmpty()) {
+                for (int i = 0; i < optionValues.size(); i++) {
+                    mappings.add(new PrefixOptionMapping(options.get(i).getType(),
+                            options.get(i).getName(),
+                            optionValues.get(i),
+                            prefixParser.getSourceEvent()));
+                }
             }
 
             for (int i = 0; i < options.size(); i++) {
@@ -129,25 +149,25 @@ public class HybridCommandParser extends CommandParser {
             arguments.add(0, new HybridCommandEvent(new PrefixCommandEvent(prefixParser.getSourceEvent(),
                     jdaExtra,
                     trigger,
-                    prefixParser.parseName(trigger),
-                    model.getDescription(),
+                    prefixParser.getName(),
+                    properties.getDescription(),
                     mappings),
                     // TODO: Reorganize mappings translation for better look
                     mappings.stream().map(HybridOptionMapping::new).collect(Collectors.toList())));
         } else if (parser instanceof SlashCommandParser) {
             SlashCommandParser slashParser = (SlashCommandParser) parser;
-            SlashCommandInteractionEvent event = (SlashCommandInteractionEvent) slashParser.getSourceEvent();
+            SlashCommandInteractionEvent event = slashParser.getSourceEvent();
 
-            List<OptionMapping> sourceMappings = event.getOptions();
+            List<OptionMapping> regularMappings = event.getOptions();
 
-            List<SlashOptionMapping> mappings = sourceMappings.stream()
+            List<SlashOptionMapping> mappings = regularMappings.stream()
                     .map(SlashOptionMapping::new)
                     .collect(Collectors.toList());
 
             SlashCommandEvent slashEvent = new SlashCommandEvent(event,
                     jdaExtra,
                     mappings,
-                    model.getDescription());
+                    properties.getDescription());
 
             for (int i = 0; i < options.size(); i++) {
                 if (mappings.size() <= i) {

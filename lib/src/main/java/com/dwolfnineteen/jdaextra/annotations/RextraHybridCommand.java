@@ -20,13 +20,35 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+package com.dwolfnineteen.jdaextra.annotations;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Command builders.
- * <br>
- * Classes that implement logic of assembling "view" objects (models)
- * by collecting data from command annotations and the Java Reflection API.
+ * Definition annotation for hybrid commands.
  *
- * @see com.dwolfnineteen.jdaextra.models.commands.CommandModel CommandModel
+ * @see com.dwolfnineteen.jdaextra.annotations annotations
  */
-package com.dwolfnineteen.jdaextra.builders;
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface RextraHybridCommand {
+    /**
+     * Sets the command name.
+     * <br>
+     * If no value is given (default to empty string),
+     * the method name (with {@link ExtraMainCommand @ExtraMainCommand}) will be taken.
+     *
+     * @return The name.
+     */
+    String name() default "";
+
+    /**
+     * Sets the command description.
+     *
+     * @return The description.
+     */
+    String description();
+}

@@ -20,13 +20,41 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+package com.dwolfnineteen.jdaextra.models;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
- * Command builders.
- * <br>
- * Classes that implement logic of assembling "view" objects (models)
- * by collecting data from command annotations and the Java Reflection API.
- *
- * @see com.dwolfnineteen.jdaextra.models.commands.CommandModel CommandModel
+ * Base class for all prefix commands.
  */
-package com.dwolfnineteen.jdaextra.builders;
+public abstract class CommonPrefixCommandProperties extends CommonCommandProperties {
+    /**
+     * The command name.
+     */
+    protected String name;
+    /**
+     * The command description.
+     */
+    protected String description;
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return {@inheritDoc}
+     */
+    @Override
+    public @NotNull String getName() {
+        return name;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return The description. {@code null} if the description not specified.
+     */
+    @Override
+    public @Nullable String getDescription() {
+        return description;
+    }
+}

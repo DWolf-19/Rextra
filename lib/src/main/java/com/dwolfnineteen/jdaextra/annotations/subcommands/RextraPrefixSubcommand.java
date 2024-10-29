@@ -20,13 +20,33 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+package com.dwolfnineteen.jdaextra.annotations.subcommands;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Command builders.
- * <br>
- * Classes that implement logic of assembling "view" objects (models)
- * by collecting data from command annotations and the Java Reflection API.
- *
- * @see com.dwolfnineteen.jdaextra.models.commands.CommandModel CommandModel
+ * Definition annotation for prefix subcommands.
  */
-package com.dwolfnineteen.jdaextra.builders;
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface RextraPrefixSubcommand {
+    /**
+     * Sets the command name.
+     * <br>
+     * If no value is given (default to empty string),
+     * the entry point (method with {@link RextraSlashSubcommand @RextraSlashSubcommand}) name will be taken.
+     *
+     * @return The name.
+     */
+    String name() default "";
+
+    /**
+     * Sets the command description.
+     *
+     * @return The description.
+     */
+    String description() default "";
+}

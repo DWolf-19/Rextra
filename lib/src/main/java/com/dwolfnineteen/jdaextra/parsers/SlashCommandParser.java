@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2023 DWolf Nineteen & The JDA-Extra contributors
+ * Copyright (c) 2023 DWolf Nineteen & The JDA-Extra Contributors
+ * Copyright (c) 2024 DWolf Nineteen & The Rextra Contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +24,9 @@ package com.dwolfnineteen.jdaextra.parsers;
 
 import com.dwolfnineteen.jdaextra.JDAExtra;
 import com.dwolfnineteen.jdaextra.events.SlashCommandEvent;
-import com.dwolfnineteen.jdaextra.models.CommandModel;
-import com.dwolfnineteen.jdaextra.models.SlashCommandModel;
-import com.dwolfnineteen.jdaextra.options.data.SlashOptionData;
+import com.dwolfnineteen.jdaextra.models.CommonCommandProperties;
+import com.dwolfnineteen.jdaextra.models.CommonSlashCommandProperties;
+import com.dwolfnineteen.jdaextra.options.data.CommandOptionData;
 import com.dwolfnineteen.jdaextra.options.mappings.SlashOptionMapping;
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -35,91 +36,95 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
  * Parser for slash commands.
+ *
  * @see com.dwolfnineteen.jdaextra.parsers parsers
  */
 public class SlashCommandParser extends CommandParser {
-    private final SlashCommandInteractionEvent sourceEvent;
-
-    private SlashCommandModel model;
-
     /**
-     * Construct new {@link com.dwolfnineteen.jdaextra.parsers.SlashCommandParser SlashCommandParser}.
+     * Construct new {@link SlashCommandParser}.
      *
-     * @param jdaExtra The {@link com.dwolfnineteen.jdaextra.JDAExtra JDAExtra} instance.
-     * @param sourceEvent The {@link net.dv8tion.jda.api.events.GenericEvent GenericEvent} for this parser.
+     * @param jdaExtra The {@link JDAExtra} instance.
+     * @param sourceEvent The {@link GenericEvent} for this parser.
      */
-    public SlashCommandParser(@NotNull JDAExtra jdaExtra,
-                              @NotNull SlashCommandInteractionEvent sourceEvent) {
-        this.jdaExtra = jdaExtra;
-        this.sourceEvent = sourceEvent;
-    }
-
-    // TODO: SlashCommandParser#getSourceEvent return SlashCommandInteractionEvent
-    /**
-     * The {@link net.dv8tion.jda.api.events.GenericEvent GenericEvent} (source event) for this parser.
-     *
-     * @return The {@link net.dv8tion.jda.api.events.GenericEvent GenericEvent}.
-     */
-    @Override
-    @NotNull
-    public GenericEvent getSourceEvent() {
-        return sourceEvent;
+    public SlashCommandParser(@NotNull JDAExtra jdaExtra, @NotNull SlashCommandInteractionEvent sourceEvent) {
+        super(jdaExtra, sourceEvent);
     }
 
     /**
-     * The {@link com.dwolfnineteen.jdaextra.models.SlashCommandModel SlashCommandModel} for this parser.
+     * The {@link SlashCommandInteractionEvent} (source event) for this parser.
      *
-     * @return The {@link com.dwolfnineteen.jdaextra.models.SlashCommandModel SlashCommandModel}.
-     * {@code null}, if the {@link com.dwolfnineteen.jdaextra.models.SlashCommandModel SlashCommandModel} not set.
+     * @return The {@link SlashCommandInteractionEvent}.
      */
     @Override
-    @Nullable
-    public SlashCommandModel getModel() {
-        return model;
+    public @NotNull SlashCommandInteractionEvent getSourceEvent() {
+        return (SlashCommandInteractionEvent) sourceEvent;
     }
 
     /**
-     * Sets {@link com.dwolfnineteen.jdaextra.models.CommandModel CommandModel} for this parser.
+     * The {@link CommonSlashCommandProperties} for this parser.
      *
-     * @param model {@link com.dwolfnineteen.jdaextra.models.CommandModel CommandModel}.
-     * @return Current {@link com.dwolfnineteen.jdaextra.parsers.SlashCommandParser SlashCommandParser} instance,
-     * for chaining.
+     * @return The {@link CommonSlashCommandProperties}. {@code null} if the {@link CommonSlashCommandProperties} not set.
      */
     @Override
-    @NotNull
-    public SlashCommandParser setModel(CommandModel model) {
-        this.model = (SlashCommandModel) model;
+    public @Nullable CommonSlashCommandProperties getProperties() {
+        return (CommonSlashCommandProperties) properties;
+    }
+
+    // Properties should be set through setter, not constructor!
+    // As you can see, in prefix command parser (JdaExtra.onMessageReceived),
+    // properties are set much later than the parser init
+    /**
+     * Sets {@link CommonCommandProperties} for this parser.
+     *
+     * @param properties The {@link CommonCommandProperties}.
+     * @return The {@link SlashCommandParser} instance, for chaining.
+     */
+    @Override
+    public @NotNull SlashCommandParser setProperties(@NotNull CommonCommandProperties properties) {
+        this.properties = properties;
 
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return {@inheritDoc}
+     */
     @Override
-    @NotNull
-    public Object[] buildInvokeArguments() {
-        List<Object> arguments = new ArrayList<>();
-        List<SlashOptionData> options = model.getOptions();
+    public @NotNull Object[] buildInvokeArguments() {
+        Objects.requireNonNull(properties);
 
-        List<OptionMapping> optionMappings = sourceEvent.getOptions();
+        List<Object> arguments = new ArrayList<>();
+        List<? extends CommandOptionData> options = properties.getOptions();
+        List<OptionMapping> regularMappings = ((SlashCommandInteractionEvent) sourceEvent).getOptions();
 
         for (int i = 0; i < options.size(); i++) {
-            if (optionMappings.size() <= i) {
+            if (regularMappings.size() <= i) {
                 arguments.add(null);
 
                 continue;
             }
 
             Object type = buildInvokeArgumentType(options.get(i).getType(),
-                    new SlashOptionMapping(optionMappings.get(i)));
-            arguments.add(type == null ? optionMappings.get(i).getAsAttachment() : type);
+                    new SlashOptionMapping(regularMappings.get(i)));
+            // TODO: Doesn't look very reliable (attachment if type is null)
+            arguments.add(type == null ? regularMappings.get(i).getAsAttachment() : type);
         }
 
-        arguments.add(0, new SlashCommandEvent(sourceEvent, jdaExtra, optionMappings.stream()
+        List<SlashOptionMapping> mappings = regularMappings.stream()
                 .map(SlashOptionMapping::new)
-                .collect(Collectors.toList()), model.getDescription()));
+                .collect(Collectors.toList());
+
+        arguments.add(0, new SlashCommandEvent((SlashCommandInteractionEvent) sourceEvent,
+                jdaExtra,
+                mappings,
+                properties.getDescription()));
 
         return arguments.toArray();
     }

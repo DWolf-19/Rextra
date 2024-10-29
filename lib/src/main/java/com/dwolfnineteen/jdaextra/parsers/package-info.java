@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2023 DWolf Nineteen & The JDA-Extra contributors
+ * Copyright (c) 2023 DWolf Nineteen & The JDA-Extra Contributors
+ * Copyright (c) 2024 DWolf Nineteen & The Rextra Contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,9 +23,5 @@
 
 /**
  * Command parsers.
- * <br>
- * These classes implement internal logic of commands processing.
- * Task of parsers is to build options mappings, events
- * and prepare arguments for executing command logic.
  */
 package com.dwolfnineteen.jdaextra.parsers;

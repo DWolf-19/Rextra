@@ -20,13 +20,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+package com.dwolfnineteen.jdaextra.models.subcommands;
+
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 
 /**
- * Command builders.
+ * Classes that implements this interface can be converted into the standard {@link SubcommandData}
+ * through {@link #toGeneralSubcommandData()}.
  * <br>
- * Classes that implement logic of assembling "view" objects (models)
- * by collecting data from command annotations and the Java Reflection API.
- *
- * @see com.dwolfnineteen.jdaextra.models.commands.CommandModel CommandModel
+ * This is used when binding to the JDA.
  */
-package com.dwolfnineteen.jdaextra.builders;
+public interface GeneralSubcommandData {
+    /**
+     * Get standard {@link SubcommandData} for this object.
+     *
+     * @return The {@link SubcommandData} instance.
+     * @see SubcommandData
+     */
+    SubcommandData toGeneralSubcommandData();
+}

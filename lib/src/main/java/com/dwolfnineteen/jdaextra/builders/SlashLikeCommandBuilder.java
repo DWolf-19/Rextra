@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2023 DWolf Nineteen & The JDA-Extra contributors
+ * Copyright (c) 2023 DWolf Nineteen & The JDA-Extra Contributors
+ * Copyright (c) 2024 DWolf Nineteen & The Rextra Contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,58 +23,52 @@
 package com.dwolfnineteen.jdaextra.builders;
 
 import com.dwolfnineteen.jdaextra.annotations.commands.CommandLocalizationFunction;
-import com.dwolfnineteen.jdaextra.annotations.commands.DescriptionLocalizations;
-import com.dwolfnineteen.jdaextra.annotations.commands.Localization;
-import com.dwolfnineteen.jdaextra.annotations.commands.NameLocalizations;
 import com.dwolfnineteen.jdaextra.commands.BaseCommand;
-import com.dwolfnineteen.jdaextra.models.CommandModel;
-import com.dwolfnineteen.jdaextra.models.SlashLikeCommandModel;
-import net.dv8tion.jda.api.interactions.DiscordLocale;
+import com.dwolfnineteen.jdaextra.commands.SlashLikeCommand;
+import com.dwolfnineteen.jdaextra.models.commands.CommandModel;
+import com.dwolfnineteen.jdaextra.models.commands.SlashLikeCommandModel;
+import net.dv8tion.jda.api.interactions.commands.localization.LocalizationFunction;
 import net.dv8tion.jda.api.interactions.commands.localization.ResourceBundleLocalizationFunction;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
- * Base builder for commands that can be executed as a slash (regular slash/hybrid).
+ * Base builder for slash-like (slash-runnable) commands.
  */
 public abstract class SlashLikeCommandBuilder extends CommandBuilder {
     /**
-     * Build command settings (such as {@link com.dwolfnineteen.jdaextra.annotations.commands.GuildOnly @GuildOnly}).
+     * Construct new {@link SlashLikeCommandBuilder}.
+     *
+     * @param command The command class.
+     */
+    protected SlashLikeCommandBuilder(@NotNull SlashLikeCommand command) {
+        super(command);
+    }
+
+    /**
+     * Build full command localization.
      *
      * @param model The command model.
-     * @param cls The command class.
-     * @return Configured {@link SlashLikeCommandModel}.
+     * @param clazz The command class.
+     * @return Configured command model.
      */
-    @Override
-    @NotNull
-    protected SlashLikeCommandModel buildSettings(@NotNull CommandModel model, @NotNull Class<? extends BaseCommand> cls) {
-        Map<DiscordLocale, String> nameLocalizations = new HashMap<>();
-        Map<DiscordLocale, String> descriptionLocalizations = new HashMap<>();
+    protected @NotNull SlashLikeCommandModel buildLocalization(@NotNull CommandModel model,
+                                                               @NotNull Class<? extends BaseCommand> clazz) {
+        return ((SlashLikeCommandModel) super.buildSettings(model, clazz))
+                .setLocalizationFunction(buildLocalizationFunction(clazz));
+    }
 
-        NameLocalizations nameLocalizationsAnnotation = cls.getAnnotation(NameLocalizations.class);
-        DescriptionLocalizations descriptionLocalizationsAnnotation = cls.getAnnotation(DescriptionLocalizations.class);
-        CommandLocalizationFunction localizationFunctionAnnotation = cls.getAnnotation(CommandLocalizationFunction.class);
+    /**
+     * Build localization function.
+     *
+     * @param clazz The command class.
+     * @return The {@link LocalizationFunction}.
+     */
+    protected @NotNull LocalizationFunction buildLocalizationFunction(@NotNull Class<? extends BaseCommand> clazz) {
+        CommandLocalizationFunction annotation = clazz.getAnnotation(CommandLocalizationFunction.class);
 
-        if (nameLocalizationsAnnotation != null) {
-            for (Localization localization : nameLocalizationsAnnotation.value()) {
-                nameLocalizations.put(localization.locale(), localization.string());
-            }
-        }
-
-        if (descriptionLocalizationsAnnotation != null) {
-            for (Localization localization : descriptionLocalizationsAnnotation.value()) {
-                descriptionLocalizations.put(localization.locale(), localization.string());
-            }
-        }
-
-        return ((SlashLikeCommandModel) super.buildSettings(model, cls))
-                .setNameLocalizations(nameLocalizations)
-                .setDescriptionLocalizations(descriptionLocalizations)
-                .setLocalizationFunction(localizationFunctionAnnotation == null
-                        ? ResourceBundleLocalizationFunction.empty().build()
-                        : ResourceBundleLocalizationFunction.fromBundles(localizationFunctionAnnotation.baseName(),
-                        localizationFunctionAnnotation.locales()).build());
+        return annotation == null
+                ? ResourceBundleLocalizationFunction.empty().build()
+                : ResourceBundleLocalizationFunction.fromBundles(annotation.baseName(),
+                annotation.locales()).build();
     }
 }

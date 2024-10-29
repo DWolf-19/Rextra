@@ -20,13 +20,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+package com.dwolfnineteen.jdaextra.models.subcommands;
 
 /**
- * Command builders.
- * <br>
- * Classes that implement logic of assembling "view" objects (models)
- * by collecting data from command annotations and the Java Reflection API.
- *
- * @see com.dwolfnineteen.jdaextra.models.commands.CommandModel CommandModel
+ * Interface defining additional APIs for slash-like (slash-runnable) subcommands.
  */
-package com.dwolfnineteen.jdaextra.builders;
+public interface SlashLikeSubcommandProperties extends SubcommandProperties, GeneralSubcommandData { }

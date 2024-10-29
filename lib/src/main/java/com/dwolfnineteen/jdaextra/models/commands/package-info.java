@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2023 DWolf Nineteen & The JDA-Extra contributors
+ * Copyright (c) 2023 DWolf Nineteen & The JDA-Extra Contributors
+ * Copyright (c) 2024 DWolf Nineteen & The Rextra Contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,35 +20,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.dwolfnineteen.jdaextra.annotations;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 
 /**
- * Definition annotation for hybrid commands.
+ * Normal command models.
  *
- * @see com.dwolfnineteen.jdaextra.annotations annotations
+ * @see com.dwolfnineteen.jdaextra.models.commands.CommandModel
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface ExtraHybridCommand {
-    /**
-     * Sets the command name.
-     * <br>
-     * If no value is given (default to empty string),
-     * the method name (with {@link ExtraMainCommand @ExtraMainCommand}) will be taken.
-     *
-     * @return The name.
-     */
-    String name() default "";
-
-    /**
-     * Sets the command description.
-     *
-     * @return The description.
-     */
-    String description();
-}
+package com.dwolfnineteen.jdaextra.models.commands;

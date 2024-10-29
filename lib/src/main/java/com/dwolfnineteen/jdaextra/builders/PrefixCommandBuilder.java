@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2023 DWolf Nineteen & The JDA-Extra contributors
+ * Copyright (c) 2023 DWolf Nineteen & The JDA-Extra Contributors
+ * Copyright (c) 2024 DWolf Nineteen & The Rextra Contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,20 +23,30 @@
 package com.dwolfnineteen.jdaextra.builders;
 
 import com.dwolfnineteen.jdaextra.annotations.ExtraPrefixCommand;
-import com.dwolfnineteen.jdaextra.annotations.options.AutoComplete;
 import com.dwolfnineteen.jdaextra.annotations.options.PrefixOption;
 import com.dwolfnineteen.jdaextra.annotations.options.Required;
+import com.dwolfnineteen.jdaextra.annotations.subcommands.RextraPrefixSubcommand;
+import com.dwolfnineteen.jdaextra.annotations.subcommands.groups.RextraPrefixSubcommandGroup;
 import com.dwolfnineteen.jdaextra.commands.BaseCommand;
 import com.dwolfnineteen.jdaextra.commands.PrefixCommand;
+import com.dwolfnineteen.jdaextra.commands.subcommandgroups.PrefixSubcommandGroup;
 import com.dwolfnineteen.jdaextra.exceptions.CommandAnnotationNotFoundException;
-import com.dwolfnineteen.jdaextra.models.PrefixCommandModel;
+import com.dwolfnineteen.jdaextra.exceptions.buildtime.CommandPropertyNotFoundException;
+import com.dwolfnineteen.jdaextra.models.commands.PrefixCommandModel;
+import com.dwolfnineteen.jdaextra.models.subcommands.PrefixSubcommandProperties;
+import com.dwolfnineteen.jdaextra.models.subcommands.groups.PrefixSubcommandGroupProperties;
+import com.dwolfnineteen.jdaextra.options.data.CommandOptionData;
 import com.dwolfnineteen.jdaextra.options.data.PrefixOptionData;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Prefix command builder.
@@ -47,45 +58,149 @@ public class PrefixCommandBuilder extends CommandBuilder {
      * @param command The prefix command class.
      */
     public PrefixCommandBuilder(@NotNull PrefixCommand command) {
-        this.command = command;
+        super(command);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return {@inheritDoc}
+     */
     @Override
-    @Nullable
-    public PrefixCommandModel buildModel() {
-        PrefixCommandModel model = new PrefixCommandModel();
-        Class<? extends BaseCommand> cls = command.getClass();
-
-        model.setCommand(command);
-        model.setMain(buildMain());
-
-        ExtraPrefixCommand annotation = cls.getAnnotation(ExtraPrefixCommand.class);
+    public @NotNull PrefixCommandModel buildModel() {
+        Class<? extends BaseCommand> clazz = command.getClass();
+        ExtraPrefixCommand annotation = clazz.getAnnotation(ExtraPrefixCommand.class);
 
         if (annotation == null) {
             throw new CommandAnnotationNotFoundException();
         }
 
-        model.setName(annotation.name().isEmpty() ? model.getMain().getName() : annotation.name());
-        model.setDescription(annotation.description().isEmpty() ? null : annotation.description());
+        Method mainEntryPoint = buildEntryPoint();
+        String name;
+        String description = annotation.description().isEmpty() ? null : annotation.description();
+        List<CommandOptionData> options = mainEntryPoint == null ? Collections.emptyList() : buildOptions(mainEntryPoint);
 
-        List<PrefixOptionData> options = new ArrayList<>();
+        if (mainEntryPoint == null) {
+            if (annotation.name().isEmpty()) {
+                throw new CommandPropertyNotFoundException("could not found command name in annotation or pick up a method name");
+            }
 
-        for (Parameter parameter : model.getMain().getParameters()) {
+            name = annotation.name();
+        } else {
+            name = annotation.name().isEmpty()
+                    ? mainEntryPoint.getName()
+                    : annotation.name();
+        }
+
+        PrefixCommandModel model = new PrefixCommandModel((PrefixCommand) command, name, description);
+
+        model.setEntryPoint(mainEntryPoint)
+                .addOptions(options)
+                .addSubcommands(buildSubcommands())
+                .addSubcommandGroups(buildSubcommandGroups());
+
+        return (PrefixCommandModel) buildSettings(model, clazz);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param entryPoint {@inheritDoc}
+     * @return {@inheritDoc}
+     */
+    @Override
+    protected @NotNull List<CommandOptionData> buildOptions(@NotNull Method entryPoint) {
+        List<CommandOptionData> options = new ArrayList<>();
+
+        for (Parameter parameter : entryPoint.getParameters()) {
             if (parameter.isAnnotationPresent(PrefixOption.class)) {
                 PrefixOption prefixOption = parameter.getAnnotation(PrefixOption.class);
 
                 PrefixOptionData data = new PrefixOptionData(buildOptionType(parameter.getType(), prefixOption.type()),
                         prefixOption.name(),
                         prefixOption.description().isEmpty() ? null : prefixOption.description(),
-                        parameter.isAnnotationPresent(Required.class),
-                        parameter.isAnnotationPresent(AutoComplete.class));
+                        parameter.isAnnotationPresent(Required.class));
 
                 options.add(data);
             }
         }
 
-        model.setOptions(options);
+        return options;
+    }
 
-        return (PrefixCommandModel) buildSettings(model, cls);
+    /**
+     * {@inheritDoc}
+     *
+     * @return {@link List} of {@link PrefixSubcommandProperties}.
+     */
+    @Override
+    protected @NotNull List<PrefixSubcommandProperties> buildSubcommands() {
+        List<PrefixSubcommandProperties> subcommands = new ArrayList<>();
+
+        for (Method method : command.getClass().getDeclaredMethods()) {
+            if (!method.isAnnotationPresent(RextraPrefixSubcommand.class)) {
+                continue;
+            }
+
+            RextraPrefixSubcommand annotation = method.getAnnotation(RextraPrefixSubcommand.class);
+
+            String name = annotation.name().isEmpty() ? method.getName() : annotation.name();
+            PrefixSubcommandProperties subcommand = new PrefixSubcommandProperties(method, name, annotation.description());
+
+            subcommands.add(subcommand.addOptions(buildOptions(method)));
+        }
+
+        System.out.println(subcommands);
+        return subcommands;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return {@link List} of {@link PrefixSubcommandProperties}.
+     */
+    @Override
+    protected @NotNull List<PrefixSubcommandGroupProperties> buildSubcommandGroups() {
+        List<PrefixSubcommandGroupProperties> groups = new ArrayList<>();
+
+        List<Class<?>> classes = Arrays.stream(command.getClass().getDeclaredClasses())
+                .filter(clazz -> clazz.isAnnotationPresent(RextraPrefixSubcommandGroup.class))
+                .collect(Collectors.toList());
+
+        for (Class<?> clazz : classes) {
+            RextraPrefixSubcommandGroup groupAnnotation = clazz.getAnnotation(RextraPrefixSubcommandGroup.class);
+
+            PrefixSubcommandGroupProperties group = new PrefixSubcommandGroupProperties(groupAnnotation.name(),
+                    groupAnnotation.description());
+
+            List<Method> entryPoints = Arrays.stream(clazz.getDeclaredMethods())
+                    .filter(method -> method.isAnnotationPresent(RextraPrefixSubcommand.class))
+                    .collect(Collectors.toList());
+
+            List<PrefixSubcommandProperties> subcommands = new ArrayList<>();
+
+            for (Method entryPoint : entryPoints) {
+                RextraPrefixSubcommand subcommandAnnotation = entryPoint.getAnnotation(RextraPrefixSubcommand.class);
+                String name = subcommandAnnotation.name().isEmpty() ? entryPoint.getName() : subcommandAnnotation.name();
+
+                PrefixSubcommandProperties subcommand = new PrefixSubcommandProperties(entryPoint, name, subcommandAnnotation.description());
+
+                subcommands.add(subcommand.addOptions(buildOptions(entryPoint)));
+            }
+
+            PrefixSubcommandGroup groupClassObject;
+
+            try {
+                groupClassObject = (PrefixSubcommandGroup) clazz.getConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException |
+                     InvocationTargetException exception) {
+                // TODO(?): Custom exception
+                throw new RuntimeException(exception);
+            }
+
+            groups.add(group.setGroupClass(groupClassObject).addSubcommands(subcommands));
+        }
+
+        return groups;
     }
 }

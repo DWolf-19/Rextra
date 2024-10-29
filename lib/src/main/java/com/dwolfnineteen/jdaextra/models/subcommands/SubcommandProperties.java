@@ -20,13 +20,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+package com.dwolfnineteen.jdaextra.models.subcommands;
 
+// TODO: Cool idea, review it
+//  https://discord.com/channels/125227483518861312/1251268109730320546/1251271685265690664
 /**
- * Command builders.
- * <br>
- * Classes that implement logic of assembling "view" objects (models)
- * by collecting data from command annotations and the Java Reflection API.
- *
- * @see com.dwolfnineteen.jdaextra.models.commands.CommandModel CommandModel
+ * Interface defining additional APIs for subcommands.
  */
-package com.dwolfnineteen.jdaextra.builders;
+public interface SubcommandProperties { }

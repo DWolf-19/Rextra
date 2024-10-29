@@ -20,13 +20,20 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+package com.dwolfnineteen.jdaextra.exceptions.buildtime;
+
+import org.jetbrains.annotations.NotNull;
 
 /**
- * Command builders.
- * <br>
- * Classes that implement logic of assembling "view" objects (models)
- * by collecting data from command annotations and the Java Reflection API.
- *
- * @see com.dwolfnineteen.jdaextra.models.commands.CommandModel CommandModel
+ * Throws when command property not found.
  */
-package com.dwolfnineteen.jdaextra.builders;
+public class CommandPropertyNotFoundException extends RuntimeException {
+    /**
+     * Construct new {@link CommandPropertyNotFoundException}.
+     *
+     * @param message The message.
+     */
+    public CommandPropertyNotFoundException(@NotNull String message) {
+        super(message);
+    }
+}

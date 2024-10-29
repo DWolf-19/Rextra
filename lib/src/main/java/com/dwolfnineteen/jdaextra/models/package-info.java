@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2023 DWolf Nineteen & The JDA-Extra contributors
+ * Copyright (c) 2023 DWolf Nineteen & The JDA-Extra Contributors
+ * Copyright (c) 2024 DWolf Nineteen & The Rextra Contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,8 +21,12 @@
  * SOFTWARE.
  */
 
+// TODO: Move command options fields and their getters to top-level common abstract classes
+
 /**
- * Command models.
- * @see com.dwolfnineteen.jdaextra.models.CommandModel CommandModel
+ * Command properties.
+ * <br>
+ * Command properties is a {@link com.dwolfnineteen.jdaextra.builders builders} output
+ * and created for better command classes representation.
  */
 package com.dwolfnineteen.jdaextra.models;

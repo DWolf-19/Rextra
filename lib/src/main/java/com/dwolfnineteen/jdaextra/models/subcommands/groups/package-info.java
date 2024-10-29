@@ -21,12 +21,8 @@
  * SOFTWARE.
  */
 
+// TODO: Methods for removing subcommands
 /**
- * Command builders.
- * <br>
- * Classes that implement logic of assembling "view" objects (models)
- * by collecting data from command annotations and the Java Reflection API.
- *
- * @see com.dwolfnineteen.jdaextra.models.commands.CommandModel CommandModel
+ * Subcommand groups properties.
  */
-package com.dwolfnineteen.jdaextra.builders;
+package com.dwolfnineteen.jdaextra.models.subcommands.groups;
