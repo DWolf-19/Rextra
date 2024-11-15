@@ -32,11 +32,9 @@ dependencies {
 }
 
 java {
-    toolchain.languageVersion.set(JavaLanguageVersion.of(21))
+    toolchain.languageVersion.set(JavaLanguageVersion.of(17))
 }
 
-tasks.withType<JavaCompile>().configureEach {
-    javaCompiler = javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(8)
-    }
+tasks.withType<Javadoc>().configureEach {
+    enabled = false
 }

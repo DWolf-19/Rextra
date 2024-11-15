@@ -20,10 +20,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version("0.8.0")
-}
-
 rootProject.name = "Rextra"
 
 include("lib")

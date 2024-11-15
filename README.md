@@ -25,7 +25,7 @@ A modern and evolving commands & components framework for JDA. Inspired by [BotC
 
 ### 🔨 Requirements
 
-* JDK 8+
+* JDK 17+
 
 ### 🗃️ Different release channels
 
